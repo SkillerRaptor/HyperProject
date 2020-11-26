@@ -36,7 +36,7 @@ public:
 
 	void SetPixel(size_t x, size_t y, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 	{
-		SetPixel(x, y, Pixel({ r, g, b }));
+		SetPixel(x, y, Pixel({ b, g, r, a }));
 	}
 
 	void SetPixel(size_t x, size_t y, Pixel pixel)
