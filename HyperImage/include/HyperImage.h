@@ -6,9 +6,10 @@
 
 struct Pixel
 {
-	uint8_t R;
-	uint8_t G;
-	uint8_t B;
+	uint8_t B = 0;
+	uint8_t G = 0;
+	uint8_t R = 0;
+	uint8_t A = 255;
 };
 
 class Image
@@ -17,9 +18,10 @@ private:
 	std::string m_FileName;
 	size_t m_Width;
 	size_t m_Height;
+
 	std::vector<uint32_t> m_Pixels;
 
-	static constexpr uint32_t BytesPerPixel = 3;
+	static constexpr uint32_t ChannelCount = 4;
 
 	friend class ImageWriter;
 
@@ -29,10 +31,10 @@ public:
 	{
 		for (size_t i = 0; i < m_Width; i++)
 			for (size_t j = 0; j < m_Height; j++)
-				m_Pixels.emplace_back(ConvertPixel(Pixel({255, 0, 0})));
+				m_Pixels.emplace_back(ConvertPixel(Pixel({0, 0, 0, 255})));
 	}
 
-	void SetPixel(size_t x, size_t y, uint8_t r, uint8_t g, uint8_t b)
+	void SetPixel(size_t x, size_t y, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 	{
 		SetPixel(x, y, Pixel({ r, g, b }));
 	}
@@ -54,24 +56,26 @@ private:
 	Pixel ConvertColor(uint32_t color) const
 	{
 		Pixel pixel{};
-		pixel.R = color & 0xFF;
-		pixel.G = color >> 8 & 0xFF;
-		pixel.B = color >> 16 & 0xFF;
+		pixel.B = color & 0xFFFF;
+		pixel.G = color >> 8 & 0xFFFF;
+		pixel.R = color >> 16 & 0xFFFF;
+		pixel.A = color >> 24 & 0xFFFF;
 		return pixel;
 	}
 
 	uint32_t ConvertPixel(const Pixel& pixel) const
 	{
-		return pixel.R | (pixel.G << 8) | (pixel.B << 16);
+		return pixel.B | (pixel.G << 8) | (pixel.R << 16) | (pixel.A << 24);
 	}
 };
 
 class ImageWriter
 {
 private:
-	static constexpr uint32_t FileHeaderSize = 14;
-	static constexpr uint32_t InfoHeaderSize = 40;
-	static constexpr uint32_t BytesPerPixel = 3;
+	static constexpr uint8_t FileHeaderSize = 14;
+	static constexpr uint8_t InfoHeaderSize = 40;
+	static constexpr uint8_t ChannelCount = 4;
+	static constexpr uint8_t BytesPerChannel = 8;
 
 public:
 	static void GenerateImage(const Image& image)
@@ -82,16 +86,11 @@ public:
 private:
 	static void GenerateBitmap(const Image& image)
 	{
-		size_t widthBytes = image.m_Width * BytesPerPixel;
-
-		unsigned char padding[4] = { 0, 0, 0, 0 };
-		size_t paddingSize = (4 - widthBytes % 4) % 4;
-
-		size_t stride = widthBytes + paddingSize;
+		size_t widthBytes = image.m_Width * ChannelCount;
 
 		FILE* imageFile = fopen(image.m_FileName.c_str(), "wb");
 
-		unsigned char* fileHeader = CreateBitmapFileHeader(image, stride);
+		unsigned char* fileHeader = CreateBitmapFileHeader(image, widthBytes);
 		fwrite(fileHeader, 1, FileHeaderSize, imageFile);
 
 		unsigned char* infoHeader = CreateBitmapInfoHeader(image);
@@ -102,11 +101,8 @@ private:
 			for (int j = 0; j < image.m_Width; j++)
 			{
 				Pixel pixel = image.GetPixel(j, i);
-				fwrite(&pixel.B, sizeof(uint8_t), 1, imageFile);
-				fwrite(&pixel.G, sizeof(uint8_t), 1, imageFile);
-				fwrite(&pixel.R, sizeof(uint8_t), 1, imageFile);
+				fwrite(&pixel, sizeof(Pixel), 1, imageFile);
 			}
-			fwrite(padding, sizeof(unsigned char), paddingSize, imageFile);
 		}
 
 		fclose(imageFile);
@@ -160,7 +156,7 @@ private:
 		infoHeader[10] = static_cast<unsigned char>(image.m_Height >> 16);
 		infoHeader[11] = static_cast<unsigned char>(image.m_Height >> 24);
 		infoHeader[12] = static_cast<unsigned char>(1);
-		infoHeader[14] = static_cast<unsigned char>(BytesPerPixel * 8);
+		infoHeader[14] = static_cast<unsigned char>(ChannelCount * BytesPerChannel);
 
 		return infoHeader;
 	}
