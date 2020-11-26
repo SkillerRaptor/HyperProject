@@ -1,12 +1,5 @@
-﻿# HyperProject
+﻿# HyperUtilities
 ![](https://img.shields.io/badge/license-MIT-yellow)
-
-## Projects
-- HyperECS
-- HyperImage
-- HyperMath
-- HyperPhysics
-- HyperUtilities
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
