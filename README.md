@@ -4,6 +4,7 @@
 HyperProject is a collection of little projects that does not have any external libraries.
 
 ## Projects
+- HyperCrypt | Encryption & Decryption Library
 - HyperECS | Entity Component System
 - HyperImage | Image Writer & Loader
 - HyperMath | Math Library
