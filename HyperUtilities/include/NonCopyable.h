@@ -1,11 +1,14 @@
 #pragma once
 
-class NonCopyable
+namespace HyperUtilities
 {
-protected:
-	NonCopyable() = default;
-	~NonCopyable() = default;
+	class NonCopyable
+	{
+	protected:
+		NonCopyable() = default;
+		~NonCopyable() = default;
 
-	NonCopyable(const NonCopyable&) = delete;
-	NonCopyable& operator=(const NonCopyable&) = delete;
-};
+		NonCopyable(const NonCopyable&) = delete;
+		NonCopyable& operator=(const NonCopyable&) = delete;
+	};
+}

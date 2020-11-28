@@ -1,11 +1,14 @@
 #pragma once
 
-class NonMoveable
+namespace HyperUtilities
 {
-protected:
-	NonMoveable() = default;
-	~NonMoveable() = default;
+	class NonMoveable
+	{
+	protected:
+		NonMoveable() = default;
+		~NonMoveable() = default;
 
-	NonMoveable(const NonMoveable&&) = delete;
-	NonMoveable& operator=(const NonMoveable&&) = delete;
-};
+		NonMoveable(const NonMoveable&&) = delete;
+		NonMoveable& operator=(const NonMoveable&&) = delete;
+	};
+}
