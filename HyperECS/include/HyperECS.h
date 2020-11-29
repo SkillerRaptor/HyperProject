@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <iostream>
+#include <mutex>
 #include <unordered_map>
 #include <vector>
 #include <queue>
@@ -40,9 +41,14 @@ namespace HyperECS
 		std::unordered_map<size_t, std::vector<void*>> m_Components;
 		std::unordered_map<Entity, std::vector<ComponentIndex>, EntityHasher> m_Entities;
 
+		std::mutex m_FreeLock;
+		std::mutex m_ComponentLock;
+		std::mutex m_EntityLock;
+
 	public:
 		Entity Construct()
 		{
+			std::unique_lock<std::mutex> entityLock(m_EntityLock);
 			Entity entity = Entity({ m_Entities.size() });
 			m_Entities[entity] = {};
 			return entity;
@@ -51,11 +57,13 @@ namespace HyperECS
 		template<class T, typename... Args>
 		constexpr T& AddComponent(Entity entity, Args&&... args)
 		{
+			std::unique_lock<std::mutex> entityLock(m_EntityLock);
 			if (m_Entities.find(entity) == m_Entities.end())
 			{
 				std::cerr << "[HyperECS] Entity does not exists!" << std::endl;
 				__debugbreak();
 			}
+			entityLock.unlock();
 
 			if (HasComponent<T>(entity))
 			{
@@ -63,9 +71,14 @@ namespace HyperECS
 				__debugbreak();
 			}
 
+			entityLock.lock();
+
 			size_t componentId = typeid(T).hash_code();
 			if (m_Components.find(componentId) == m_Components.end())
 				m_Components[componentId] = {};
+
+			std::unique_lock<std::mutex> freeLock(m_FreeLock);
+			std::unique_lock<std::mutex> componentLock(m_ComponentLock);
 
 			size_t index = 0;
 			T* component;
@@ -89,17 +102,24 @@ namespace HyperECS
 		template<class T>
 		constexpr void RemoveComponent(Entity entity)
 		{
+			std::unique_lock<std::mutex> entityLock(m_EntityLock);
 			if (m_Entities.find(entity) == m_Entities.end())
 			{
 				std::cerr << "[HyperECS] Entity does not exists!" << std::endl;
 				__debugbreak();
 			}
+			entityLock.unlock();
 
 			if (!HasComponent<T>(entity))
 			{
 				std::cerr << "[HyperECS] Entity has not the component!" << std::endl;
 				__debugbreak();
 			}
+
+			entityLock.lock();
+
+			std::unique_lock<std::mutex> freeLock(m_FreeLock);
+			std::unique_lock<std::mutex> componentLock(m_ComponentLock);
 
 			size_t componentId = typeid(T).hash_code();
 			std::vector<ComponentIndex>& components = m_Entities[entity];
@@ -115,11 +135,14 @@ namespace HyperECS
 		template<class... T>
 		constexpr void RemoveMultipleComponent(Entity entity)
 		{
+			std::unique_lock<std::mutex> entityLock(m_EntityLock);
 			if (m_Entities.find(entity) == m_Entities.end())
 			{
 				std::cerr << "[HyperECS] Entity does not exists!" << std::endl;
 				__debugbreak();
 			}
+
+			entityLock.unlock();
 
 			if (!HasMultipleComponent<T...>(entity))
 			{
@@ -127,9 +150,13 @@ namespace HyperECS
 				__debugbreak();
 			}
 
+			entityLock.lock();
+
 			auto lambda = [&]<typename C>() mutable
 			{
+				entityLock.unlock();
 				RemoveComponent<C>(entity);
+				entityLock.lock();
 			};
 			(lambda.template operator() < T > (), ...);
 		}
@@ -137,17 +164,25 @@ namespace HyperECS
 		template<class T>
 		constexpr T& GetComponent(Entity entity)
 		{
+			std::unique_lock<std::mutex> entityLock(m_EntityLock);
 			if (m_Entities.find(entity) == m_Entities.end())
 			{
 				std::cerr << "[HyperECS] Entity does not exists!" << std::endl;
 				__debugbreak();
 			}
 
+			entityLock.unlock();
+
 			if (!HasComponent<T>(entity))
 			{
 				std::cerr << "[HyperECS] Entity has not the component!" << std::endl;
 				__debugbreak();
 			}
+
+			entityLock.lock();
+
+			std::unique_lock<std::mutex> freeLock(m_FreeLock);
+			std::unique_lock<std::mutex> componentLock(m_ComponentLock);
 
 			size_t componentId = typeid(T).hash_code();
 			std::vector<ComponentIndex> components = m_Entities[entity];
@@ -159,11 +194,14 @@ namespace HyperECS
 		template<class T>
 		constexpr bool HasComponent(Entity entity)
 		{
+			std::unique_lock<std::mutex> entityLock(m_EntityLock);
 			if (m_Entities.find(entity) == m_Entities.end())
 			{
 				std::cerr << "[HyperECS] Entity does not exists!" << std::endl;
 				__debugbreak();
 			}
+
+			std::unique_lock<std::mutex> componentLock(m_ComponentLock);
 
 			size_t componentId = typeid(T).hash_code();
 			std::vector<ComponentIndex> components = m_Entities[entity];
@@ -176,6 +214,7 @@ namespace HyperECS
 		template<class... T>
 		constexpr bool HasMultipleComponent(Entity entity)
 		{
+			std::unique_lock<std::mutex> entityLock(m_EntityLock);
 			if (m_Entities.find(entity) == m_Entities.end())
 			{
 				std::cerr << "[HyperECS] Entity does not exists!" << std::endl;
@@ -187,8 +226,10 @@ namespace HyperECS
 			{
 				if (shouldSkip)
 					return;
+				entityLock.unlock();
 				if (!HasComponent<C>(entity))
 					shouldSkip = true;
+				entityLock.lock();
 			};
 			(lambda.template operator() < T > (), ...);
 			if (shouldSkip)
