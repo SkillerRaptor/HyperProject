@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <iostream>
 #include <unordered_map>
 #include <vector>
@@ -48,7 +49,7 @@ namespace HyperECS
 		}
 
 		template<class T, typename... Args>
-		T& AddComponent(Entity entity, Args&&... args)
+		constexpr T& AddComponent(Entity entity, Args&&... args)
 		{
 			if (m_Entities.find(entity) == m_Entities.end())
 			{
@@ -86,7 +87,7 @@ namespace HyperECS
 		}
 
 		template<class T>
-		void RemoveComponent(Entity entity)
+		constexpr void RemoveComponent(Entity entity)
 		{
 			if (m_Entities.find(entity) == m_Entities.end())
 			{
@@ -111,8 +112,30 @@ namespace HyperECS
 				}
 		}
 
+		template<class... T>
+		constexpr void RemoveMultipleComponent(Entity entity)
+		{
+			if (m_Entities.find(entity) == m_Entities.end())
+			{
+				std::cerr << "[HyperECS] Entity does not exists!" << std::endl;
+				__debugbreak();
+			}
+
+			if (!HasMultipleComponent<T...>(entity))
+			{
+				std::cerr << "[HyperECS] Entity has not the component!" << std::endl;
+				__debugbreak();
+			}
+
+			auto lambda = [&]<typename C>() mutable
+			{
+				RemoveComponent<C>(entity);
+			};
+			(lambda.template operator() < T > (), ...);
+		}
+
 		template<class T>
-		T& GetComponent(Entity entity)
+		constexpr T& GetComponent(Entity entity)
 		{
 			if (m_Entities.find(entity) == m_Entities.end())
 			{
@@ -134,7 +157,7 @@ namespace HyperECS
 		}
 
 		template<class T>
-		bool HasComponent(Entity entity)
+		constexpr bool HasComponent(Entity entity)
 		{
 			if (m_Entities.find(entity) == m_Entities.end())
 			{
@@ -150,11 +173,80 @@ namespace HyperECS
 			return false;
 		}
 
+		template<class... T>
+		constexpr bool HasMultipleComponent(Entity entity)
+		{
+			if (m_Entities.find(entity) == m_Entities.end())
+			{
+				std::cerr << "[HyperECS] Entity does not exists!" << std::endl;
+				__debugbreak();
+			}
+
+			bool shouldSkip = false;
+			auto lambda = [&]<typename C>() mutable
+			{
+				if (shouldSkip)
+					return;
+				if (!HasComponent<C>(entity))
+					shouldSkip = true;
+			};
+			(lambda.template operator() < T > (), ...);
+			if (shouldSkip)
+				return false;
+			return true;
+		}
+
+		void Each(const typename std::common_type<std::function<void(Entity)>>::type function)
+		{
+			for (auto& entity : m_Entities)
+				function(entity.first);
+		}
+
+		template<class... T>
+		constexpr void Each(const typename std::common_type<std::function<void(Entity, T&...)>>::type function)
+		{
+			for (const auto& entity : m_Entities)
+			{
+				bool shouldSkip = false;
+				auto lambda = [&]<typename C>() mutable
+				{
+					if (shouldSkip)
+						return;
+					if (!HasComponent<C>(entity.first))
+						shouldSkip = true;
+				};
+				(lambda.template operator() < T > (), ...);
+				if (shouldSkip)
+					continue;
+				function(entity.first, GetComponent<T>(entity.first)...);
+			}
+		}
+
 		std::vector<Entity> GetEntities() const
 		{
 			std::vector<Entity> entities;
 			for (const auto& entity : m_Entities)
 				entities.push_back(entity.first);
+			return entities;
+		}
+
+		template<class... T>
+		constexpr std::vector<Entity> GetEntities()
+		{
+			std::vector<Entity> entities;
+			for (auto& entity : m_Entities)
+			{
+				bool shouldSkip = false;
+				auto lambda = [&]<typename C>() mutable {
+					if (shouldSkip)
+						return;
+					if (!HasComponent<C>(entity.first))
+						shouldSkip = true;
+				}; (lambda.template operator() < T > (), ...);
+				if (shouldSkip)
+					continue;
+				entities.push_back(entity.first);
+			}
 			return entities;
 		}
 	};
