@@ -448,6 +448,9 @@ namespace HyperECS
 		/* Map that holds the typeid of a system as UUID and the corresponding system class data */
 		std::unordered_map<size_t, System*> m_Systems;
 
+		/* Mutex & Lock for the systems */
+		std::mutex m_SystemLock;
+
 	public:
 		/**
 		 * @brief Constructing an entity in the registry
@@ -604,6 +607,7 @@ namespace HyperECS
 				__debugbreak();
 			}
 
+			std::unique_lock<std::mutex> systemLock(m_SystemLock);
 			m_Systems[typeid(T).hash_code()] = new T(std::forward<Args>(args)...);
 			return *static_cast<T*>(m_Systems.at(typeid(T).hash_code()));
 		}
@@ -622,6 +626,7 @@ namespace HyperECS
 				__debugbreak();
 			}
 
+			std::unique_lock<std::mutex> systemLock(m_SystemLock);
 			m_Systems.erase(typeid(T).hash_code());
 		}
 
@@ -639,6 +644,7 @@ namespace HyperECS
 				__debugbreak();
 			}
 
+			std::unique_lock<std::mutex> systemLock(m_SystemLock);
 			auto lambda = [&]<typename C>() mutable
 			{
 				RemoveSystem<C>();
@@ -662,6 +668,7 @@ namespace HyperECS
 				__debugbreak();
 			}
 
+			std::unique_lock<std::mutex> systemLock(m_SystemLock);
 			return *static_cast<T*>(m_Systems.at(typeid(T).hash_code()));
 		}
 
@@ -675,6 +682,7 @@ namespace HyperECS
 		template<class T, class = class std::enable_if<std::is_base_of<System, T>::value, T>::type>
 		constexpr bool HasSystem()
 		{
+			std::unique_lock<std::mutex> systemLock(m_SystemLock);
 			return m_Systems.find(typeid(T).hash_code()) != m_Systems.end();
 		}
 
@@ -688,13 +696,16 @@ namespace HyperECS
 		template<class... T, class = class std::enable_if<std::is_base_of<System, T...>::value, T...>::type>
 		constexpr bool HasMultipleSystem()
 		{
+			std::unique_lock<std::mutex> systemLock(m_SystemLock);
 			bool shouldSkip = false;
 			auto lambda = [&]<typename C>() mutable
 			{
 				if (shouldSkip)
 					return;
+				systemLock.unlock();
 				if (!HasSystem<C>())
 					shouldSkip = true;
+				systemLock.lock();
 			};
 			(lambda.template operator() < T > (), ...);
 			return !shouldSkip;
