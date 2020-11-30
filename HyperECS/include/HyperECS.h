@@ -9,6 +9,7 @@
 
 namespace HyperECS
 {
+	/* Wrapper for entity UUID */
 	struct Entity
 	{
 		size_t Handle;
@@ -20,11 +21,13 @@ namespace HyperECS
 	class Registry
 	{
 	private:
+		/* Hasher to hash entity struct */
 		struct EntityHasher
 		{
 			size_t operator()(const Entity& entity) const { return (std::hash<size_t>()(entity.Handle)); }
 		};
 
+		/* Struct to hold component UUID & index */
 		struct ComponentIndex
 		{
 			size_t Handle;
@@ -37,15 +40,26 @@ namespace HyperECS
 			bool operator==(const ComponentIndex& other) const { return Handle == other.Handle && Index == other.Index; }
 		};
 
+		/* Holds the free entries in the component map */
 		std::queue<size_t> m_FreeIndex;
+
+		/* Holds the typeid of a component struct and holds a vector of the object type class data */
 		std::unordered_map<size_t, std::vector<void*>> m_Components;
+
+		/* Holds the entities and the corresponding components */
 		std::unordered_map<Entity, std::vector<ComponentIndex>, EntityHasher> m_Entities;
 
+		/* Locks for multi-threading */
 		std::mutex m_FreeLock;
 		std::mutex m_ComponentLock;
 		std::mutex m_EntityLock;
 
 	public:
+		/**
+		 * @brief Constructing an entity in the registry
+		 *
+		 * @return Returns an entity
+		 */
 		Entity Construct()
 		{
 			std::unique_lock<std::mutex> entityLock(m_EntityLock);
@@ -54,6 +68,16 @@ namespace HyperECS
 			return entity;
 		}
 
+		/**
+		 * @brief Adding component to an entity
+		 *
+		 * @tparam T The component class that is getting created
+		 * @tparam Args The arguments for the class
+		 * @param entity The corresponding entity that the component getting assigned to
+		 * @param args The arguments for the class
+		 *
+		 * @return Returns the created component
+		 */
 		template<class T, typename... Args>
 		constexpr T& AddComponent(Entity entity, Args&&... args)
 		{
@@ -99,6 +123,12 @@ namespace HyperECS
 			return *component;
 		}
 
+		/**
+		 * @brief Removing component from an entity
+		 *
+		 * @tparam T The component class that is getting removed
+		 * @param entity The corresponding entity where component getting removed
+		 */
 		template<class T>
 		constexpr void RemoveComponent(Entity entity)
 		{
@@ -132,6 +162,12 @@ namespace HyperECS
 				}
 		}
 
+		/**
+		 * @brief Removing multiple components from an entity
+		 *
+		 * @tparam T The component classes that are getting removed
+		 * @param entity The corresponding entity where component getting removed
+		 */
 		template<class... T>
 		constexpr void RemoveMultipleComponent(Entity entity)
 		{
@@ -161,6 +197,14 @@ namespace HyperECS
 			(lambda.template operator() < T > (), ...);
 		}
 
+		/**
+		 * @brief Getting component from an entity
+		 *
+		 * @tparam T The component class that is searched for
+		 * @param entity The corresponding entity that the component is assigned to
+		 *
+		 * @return Returns the corresponding component
+		 */
 		template<class T>
 		constexpr T& GetComponent(Entity entity)
 		{
@@ -191,6 +235,14 @@ namespace HyperECS
 					return *static_cast<T*>(m_Components[componentId][component.Index]);
 		}
 
+		/**
+		 * @brief Check if an entity has a component
+		 *
+		 * @tparam T The component class that is getting checked
+		 * @param entity The corresponding entity that the component is assigned to
+		 *
+		 * @return Returns if the component was found
+		 */
 		template<class T>
 		constexpr bool HasComponent(Entity entity)
 		{
@@ -211,6 +263,14 @@ namespace HyperECS
 			return false;
 		}
 
+		/**
+		 * @brief Check if an entity has multiple components
+		 *
+		 * @tparam T The component classes that are getting checked
+		 * @param entity The corresponding entity that the component is assigned to
+		 *
+		 * @return Returns if the components were found
+		 */
 		template<class... T>
 		constexpr bool HasMultipleComponent(Entity entity)
 		{
@@ -237,12 +297,23 @@ namespace HyperECS
 			return true;
 		}
 
+		/**
+		 * @brief Calling a function for every entity
+		 *
+		 * @param function Function that is getting called for every entity
+		 */
 		void Each(const typename std::common_type<std::function<void(Entity)>>::type function)
 		{
 			for (auto& entity : m_Entities)
 				function(entity.first);
 		}
 
+		/**
+		 * @brief Calling a function for every entity with specified components
+		 *
+		 * @tparam T The classes that are getting filtered
+		 * @param function Function that is getting called for every entity that has the specified components
+		 */
 		template<class... T>
 		constexpr void Each(const typename std::common_type<std::function<void(Entity, T&...)>>::type function)
 		{
@@ -263,6 +334,11 @@ namespace HyperECS
 			}
 		}
 
+		/**
+		 * @brief Getting all entities
+		 *
+		 * @return Returns all entities
+		 */
 		std::vector<Entity> GetEntities() const
 		{
 			std::vector<Entity> entities;
@@ -271,6 +347,13 @@ namespace HyperECS
 			return entities;
 		}
 
+		/**
+		 * @brief Getting all entities with specified components
+		 *
+		 * @tparam T The classes that are getting filtered
+		 *
+		 * @return Returns all entities with specified components
+		 */
 		template<class... T>
 		constexpr std::vector<Entity> GetEntities()
 		{
@@ -295,81 +378,186 @@ namespace HyperECS
 	class System
 	{
 	public:
+		/**
+		 * @brief Getting called every tick
+		 *
+		 * @param registry The current registry where the system applies
+		 * @param currentTick The current tick that is executing
+		 */
 		virtual void OnTick(Registry& registry, int currentTick) = 0;
+
+		/**
+		 * @brief Getting called every update frame
+		 *
+		 * @param registry The current registry where the system applies
+		 * @param deltaTime The time difference between last update and current update
+		 */
 		virtual void OnUpdate(Registry& registry, float deltaTime) = 0;
+
+		/**
+		 * @brief Getting called every render frame
+		 *
+		 * @param registry The current registry where the system applies
+		 */
 		virtual void OnRender(Registry& registry) = 0;
 	};
 
 	class World
 	{
 	private:
+		/* Registry for the current world */
 		Registry m_Registry;
+
+		/* Map that holds the typeid of a system as UUID and the corresponding system class data */
 		std::unordered_map<size_t, System*> m_Systems;
 
 	public:
+		/**
+		 * @brief Constructing an entity in the registry
+		 *
+		 * @return Returns an entity
+		 */
 		Entity Construct()
 		{
 			return m_Registry.Construct();
 		}
 
+		/**
+		 * @brief Adding component to an entity
+		 *
+		 * @tparam T The component class that is getting created
+		 * @tparam Args The arguments for the class
+		 * @param entity The corresponding entity that the component getting assigned to
+		 * @param args The arguments for the class
+		 *
+		 * @return Returns the created component
+		 */
 		template<class T, typename... Args>
 		constexpr T& AddComponent(Entity entity, Args&&... args)
 		{
 			return m_Registry.AddComponent<T>(entity, args...);
 		}
 
+		/**
+		 * @brief Removing component from an entity
+		 *
+		 * @tparam T The component class that is getting removed
+		 * @param entity The corresponding entity where component getting removed
+		 */
 		template<class T>
 		constexpr void RemoveComponent(Entity entity)
 		{
 			m_Registry.RemoveComponent<T>(entity);
 		}
 
+		/**
+		 * @brief Removing multiple components from an entity
+		 *
+		 * @tparam T The component classes that are getting removed
+		 * @param entity The corresponding entity where component getting removed
+		 */
 		template<class... T>
 		constexpr void RemoveMultipleComponent(Entity entity)
 		{
 			m_Registry.RemoveMultipleComponent<T...>(entity);
 		}
 
+		/**
+		 * @brief Getting component from an entity
+		 *
+		 * @tparam T The component class that is searched for
+		 * @param entity The corresponding entity that the component is assigned to
+		 *
+		 * @return Returns the corresponding component
+		 */
 		template<class T>
 		constexpr T& GetComponent(Entity entity)
 		{
 			return m_Registry.GetComponent<T>(entity);
 		}
 
+		/**
+		 * @brief Check if an entity has a component
+		 *
+		 * @tparam T The component class that is getting checked
+		 * @param entity The corresponding entity that the component is assigned to
+		 *
+		 * @return Returns if the component was found
+		 */
 		template<class T>
 		constexpr bool HasComponent(Entity entity)
 		{
 			return m_Registry.HasComponent<T>(entity);
 		}
 
+		/**
+		 * @brief Check if an entity has multiple components
+		 *
+		 * @tparam T The component classes that are getting checked
+		 * @param entity The corresponding entity that the component is assigned to
+		 *
+		 * @return Returns if the components were found
+		 */
 		template<class... T>
 		constexpr bool HasMultipleComponent(Entity entity)
 		{
 			return m_Registry.HasMultipleComponent<T...>(entity);
 		}
 
+		/**
+		 * @brief Calling a function for every entity
+		 *
+		 * @param function Function that is getting called for every entity
+		 */
 		void Each(const typename std::common_type<std::function<void(Entity)>>::type function)
 		{
 			m_Registry.Each(function);
 		}
 
+		/**
+		 * @brief Calling a function for every entity with specified components
+		 *
+		 * @tparam T The classes that are getting filtered
+		 * @param function Function that is getting called for every entity that has the specified components
+		 */
 		template<class... T>
 		constexpr void Each(const typename std::common_type<std::function<void(Entity, T&...)>>::type function)
 		{
 			m_Registry.Each<T...>(function);
 		}
 
+		/**
+		 * @brief Getting all entities
+		 *
+		 * @return Returns all entities
+		 */
 		std::vector<Entity> GetEntities() const
 		{
 			return m_Registry.GetEntities();
 		}
 
+		/**
+		 * @brief Getting all entities with specified components
+		 *
+		 * @tparam T The classes that are getting filtered
+		 *
+		 * @return Returns all entities with specified components
+		 */
 		template<class... T>
 		constexpr std::vector<Entity> GetEntities()
 		{
 			return m_Registry.GetEntities<T...>();
 		}
 
+		/**
+		 * @brief Adding system to the world
+		 *
+		 * @tparam T The system class that is getting created
+		 * @tparam Args The arguments for the class
+		 * @param args The arguments for the class
+		 *
+		 * @return Returns the created system
+		 */
 		template<class T, class = class std::enable_if<std::is_base_of<System, T>::value, T>::type, typename... Args>
 		constexpr T& AddSystem(Args&&... args)
 		{
@@ -383,6 +571,11 @@ namespace HyperECS
 			return *static_cast<T*>(m_Systems.at(typeid(T).hash_code()));
 		}
 
+		/**
+		 * @brief Removing a system from an entity
+		 *
+		 * @tparam T The system class that is getting removed
+		 */
 		template<class T, class = class std::enable_if<std::is_base_of<System, T>::value, T>::type>
 		constexpr void RemoveSystem()
 		{
@@ -395,6 +588,11 @@ namespace HyperECS
 			m_Systems.erase(typeid(T).hash_code());
 		}
 
+		/**
+		 * @brief Removing multiple system from the world
+		 *
+		 * @tparam T The system classes that are getting removed
+		 */
 		template<class... T, class = class std::enable_if<std::is_base_of<System, T...>::value, T...>::type>
 		constexpr void RemoveMultipleSystem()
 		{
@@ -411,6 +609,13 @@ namespace HyperECS
 			(lambda.template operator() < T > (), ...);
 		}
 
+		/**
+		 * @brief Getting the system from the world
+		 *
+		 * @tparam T The system class that is searched for
+		 *
+		 * @return Returns the corresponding system
+		 */
 		template<class T, class = class std::enable_if<std::is_base_of<System, T>::value, T>::type>
 		constexpr T& GetSystem()
 		{
@@ -423,12 +628,26 @@ namespace HyperECS
 			return *static_cast<T*>(m_Systems.at(typeid(T).hash_code()));
 		}
 
+		/**
+		 * @brief Check if the world has a system
+		 *
+		 * @tparam T The system class that is getting checked
+		 *
+		 * @return Returns if the system was found
+		 */
 		template<class T, class = class std::enable_if<std::is_base_of<System, T>::value, T>::type>
 		constexpr bool HasSystem()
 		{
 			return m_Systems.find(typeid(T).hash_code()) != m_Systems.end();
 		}
 
+		/**
+		 * @brief Check if the world has multiple systems
+		 *
+		 * @tparam T The systems classes that are getting checked
+		 *
+		 * @return Returns if the systems were found
+		 */
 		template<class... T, class = class std::enable_if<std::is_base_of<System, T...>::value, T...>::type>
 		constexpr bool HasMultipleSystem()
 		{
@@ -444,6 +663,11 @@ namespace HyperECS
 			return !shouldSkip;
 		}
 
+		/**
+		 * @brief Getting all systems
+		 *
+		 * @return Returns all systems
+		 */
 		std::vector<System*> GetSystems()
 		{
 			std::vector<System*> systems;
@@ -452,18 +676,31 @@ namespace HyperECS
 			return systems;
 		}
 
+		/**
+		 * @brief Calling from every system the OnTick function
+		 *
+		 * @param currentTick The current tick that is executing
+		 */
 		void OnTick(int currentTick)
 		{
 			for (auto& system : m_Systems)
 				system.second->OnTick(m_Registry, currentTick);
 		}
 
+		/**
+		 * @brief Calling from every system the OnUpdate function
+		 *
+		 * @param deltaTime The time difference between last update and current update
+		 */
 		void OnUpdate(float deltaTime)
 		{
 			for (auto& system : m_Systems)
 				system.second->OnUpdate(m_Registry, deltaTime);
 		}
 
+		/**
+		 * @brief Calling from every system the OnRender function
+		 */
 		void OnRender()
 		{
 			for (auto& system : m_Systems)
