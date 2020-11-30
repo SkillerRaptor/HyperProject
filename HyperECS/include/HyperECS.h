@@ -49,7 +49,7 @@ namespace HyperECS
 		/* Component struct to hold data from a specified component */
 		struct ComponentIndex
 		{
-			/* Typeid hashcode from the component */
+			/* Type id hash code from the component */
 			size_t Handle;
 
 			/* Index from the component in the component map */
