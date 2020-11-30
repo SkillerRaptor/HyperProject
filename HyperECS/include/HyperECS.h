@@ -86,7 +86,7 @@ namespace HyperECS
 		/* Holds the entities and the corresponding components */
 		std::unordered_map<Entity, std::vector<ComponentIndex>, EntityHasher> m_Entities;
 
-#ifdef HYPERECS_MUTEX
+	#ifdef HYPERECS_MUTEX
 		/* Mutex & Lock for the free entries */
 		std::mutex m_FreeLock;
 
@@ -95,7 +95,7 @@ namespace HyperECS
 
 		/* Mutex & Lock for the entities */
 		std::mutex m_EntityLock;
-#endif /* HYPERECS_MUTEX */
+	#endif /* HYPERECS_MUTEX */
 
 	public:
 		/**
@@ -105,9 +105,9 @@ namespace HyperECS
 		 */
 		Entity Construct()
 		{
-#ifdef HYPERECS_MUTEX
+		#ifdef HYPERECS_MUTEX
 			std::unique_lock<std::mutex> entityLock(m_EntityLock);
-#endif /* HYPERECS_MUTEX */
+		#endif /* HYPERECS_MUTEX */
 
 			Entity entity = Entity({ m_Entities.size() });
 			m_Entities[entity] = {};
@@ -127,9 +127,9 @@ namespace HyperECS
 		template<class T, typename... Args>
 		constexpr T& AddComponent(Entity entity, Args&&... args)
 		{
-#ifdef HYPERECS_MUTEX
+		#ifdef HYPERECS_MUTEX
 			std::unique_lock<std::mutex> entityLock(m_EntityLock);
-#endif /* HYPERECS_MUTEX */
+		#endif /* HYPERECS_MUTEX */
 
 			if (m_Entities.find(entity) == m_Entities.end())
 			{
@@ -137,9 +137,9 @@ namespace HyperECS
 				__debugbreak();
 			}
 
-#ifdef HYPERECS_MUTEX
+		#ifdef HYPERECS_MUTEX
 			entityLock.unlock();
-#endif /* HYPERECS_MUTEX */
+		#endif /* HYPERECS_MUTEX */
 
 			if (HasComponent<T>(entity))
 			{
@@ -147,18 +147,18 @@ namespace HyperECS
 				__debugbreak();
 			}
 
-#ifdef HYPERECS_MUTEX
+		#ifdef HYPERECS_MUTEX
 			entityLock.lock();
-#endif /* HYPERECS_MUTEX */
+		#endif /* HYPERECS_MUTEX */
 
 			size_t componentId = typeid(T).hash_code();
 			if (m_Components.find(componentId) == m_Components.end())
 				m_Components[componentId] = {};
 
-#ifdef HYPERECS_MUTEX
+		#ifdef HYPERECS_MUTEX
 			std::unique_lock<std::mutex> freeLock(m_FreeLock);
 			std::unique_lock<std::mutex> componentLock(m_ComponentLock);
-#endif /* HYPERECS_MUTEX */
+		#endif /* HYPERECS_MUTEX */
 
 			size_t index = 0;
 			T* component;
@@ -188,9 +188,9 @@ namespace HyperECS
 		template<class T>
 		constexpr void RemoveComponent(Entity entity)
 		{
-#ifdef HYPERECS_MUTEX
+		#ifdef HYPERECS_MUTEX
 			std::unique_lock<std::mutex> entityLock(m_EntityLock);
-#endif /* HYPERECS_MUTEX */
+		#endif /* HYPERECS_MUTEX */
 
 			if (m_Entities.find(entity) == m_Entities.end())
 			{
@@ -198,9 +198,9 @@ namespace HyperECS
 				__debugbreak();
 			}
 
-#ifdef HYPERECS_MUTEX
+		#ifdef HYPERECS_MUTEX
 			entityLock.unlock();
-#endif /* HYPERECS_MUTEX */
+		#endif /* HYPERECS_MUTEX */
 
 			if (!HasComponent<T>(entity))
 			{
@@ -208,12 +208,12 @@ namespace HyperECS
 				__debugbreak();
 			}
 
-#ifdef HYPERECS_MUTEX
+		#ifdef HYPERECS_MUTEX
 			entityLock.lock();
 
 			std::unique_lock<std::mutex> freeLock(m_FreeLock);
 			std::unique_lock<std::mutex> componentLock(m_ComponentLock);
-#endif /* HYPERECS_MUTEX */
+		#endif /* HYPERECS_MUTEX */
 
 			size_t componentId = typeid(T).hash_code();
 			std::vector<ComponentIndex>& components = m_Entities[entity];
@@ -235,9 +235,9 @@ namespace HyperECS
 		template<class... T>
 		constexpr void RemoveMultipleComponent(Entity entity)
 		{
-#ifdef HYPERECS_MUTEX
+		#ifdef HYPERECS_MUTEX
 			std::unique_lock<std::mutex> entityLock(m_EntityLock);
-#endif /* HYPERECS_MUTEX */
+		#endif /* HYPERECS_MUTEX */
 
 			if (m_Entities.find(entity) == m_Entities.end())
 			{
@@ -245,9 +245,9 @@ namespace HyperECS
 				__debugbreak();
 			}
 
-#ifdef HYPERECS_MUTEX
+		#ifdef HYPERECS_MUTEX
 			entityLock.unlock();
-#endif /* HYPERECS_MUTEX */
+		#endif /* HYPERECS_MUTEX */
 
 			if (!HasMultipleComponent<T...>(entity))
 			{
@@ -255,21 +255,21 @@ namespace HyperECS
 				__debugbreak();
 			}
 
-#ifdef HYPERECS_MUTEX
+		#ifdef HYPERECS_MUTEX
 			entityLock.lock();
-#endif /* HYPERECS_MUTEX */
+		#endif /* HYPERECS_MUTEX */
 
 			auto lambda = [&]<typename C>() mutable
 			{
-#ifdef HYPERECS_MUTEX
+			#ifdef HYPERECS_MUTEX
 				entityLock.unlock();
-#endif /* HYPERECS_MUTEX */
+			#endif /* HYPERECS_MUTEX */
 
 				RemoveComponent<C>(entity);
 
-#ifdef HYPERECS_MUTEX
+			#ifdef HYPERECS_MUTEX
 				entityLock.lock();
-#endif /* HYPERECS_MUTEX */
+			#endif /* HYPERECS_MUTEX */
 			};
 			(lambda.template operator() < T > (), ...);
 		}
@@ -285,9 +285,9 @@ namespace HyperECS
 		template<class T>
 		constexpr T& GetComponent(Entity entity)
 		{
-#ifdef HYPERECS_MUTEX
+		#ifdef HYPERECS_MUTEX
 			std::unique_lock<std::mutex> entityLock(m_EntityLock);
-#endif /* HYPERECS_MUTEX */
+		#endif /* HYPERECS_MUTEX */
 
 			if (m_Entities.find(entity) == m_Entities.end())
 			{
@@ -295,9 +295,9 @@ namespace HyperECS
 				__debugbreak();
 			}
 
-#ifdef HYPERECS_MUTEX
+		#ifdef HYPERECS_MUTEX
 			entityLock.unlock();
-#endif /* HYPERECS_MUTEX */
+		#endif /* HYPERECS_MUTEX */
 
 			if (!HasComponent<T>(entity))
 			{
@@ -305,12 +305,12 @@ namespace HyperECS
 				__debugbreak();
 			}
 
-#ifdef HYPERECS_MUTEX
+		#ifdef HYPERECS_MUTEX
 			entityLock.lock();
 
 			std::unique_lock<std::mutex> freeLock(m_FreeLock);
 			std::unique_lock<std::mutex> componentLock(m_ComponentLock);
-#endif /* HYPERECS_MUTEX */
+		#endif /* HYPERECS_MUTEX */
 
 			size_t componentId = typeid(T).hash_code();
 			std::vector<ComponentIndex> components = m_Entities[entity];
@@ -330,9 +330,9 @@ namespace HyperECS
 		template<class T>
 		constexpr bool HasComponent(Entity entity)
 		{
-#ifdef HYPERECS_MUTEX
+		#ifdef HYPERECS_MUTEX
 			std::unique_lock<std::mutex> entityLock(m_EntityLock);
-#endif /* HYPERECS_MUTEX */
+		#endif /* HYPERECS_MUTEX */
 
 			if (m_Entities.find(entity) == m_Entities.end())
 			{
@@ -340,9 +340,9 @@ namespace HyperECS
 				__debugbreak();
 			}
 
-#ifdef HYPERECS_MUTEX
+		#ifdef HYPERECS_MUTEX
 			std::unique_lock<std::mutex> componentLock(m_ComponentLock);
-#endif /* HYPERECS_MUTEX */
+		#endif /* HYPERECS_MUTEX */
 
 			size_t componentId = typeid(T).hash_code();
 			std::vector<ComponentIndex> components = m_Entities[entity];
@@ -363,9 +363,9 @@ namespace HyperECS
 		template<class... T>
 		constexpr bool HasMultipleComponent(Entity entity)
 		{
-#ifdef HYPERECS_MUTEX
+		#ifdef HYPERECS_MUTEX
 			std::unique_lock<std::mutex> entityLock(m_EntityLock);
-#endif /* HYPERECS_MUTEX */
+		#endif /* HYPERECS_MUTEX */
 
 			if (m_Entities.find(entity) == m_Entities.end())
 			{
@@ -379,16 +379,16 @@ namespace HyperECS
 				if (shouldSkip)
 					return;
 
-#ifdef HYPERECS_MUTEX
+			#ifdef HYPERECS_MUTEX
 				entityLock.unlock();
-#endif /* HYPERECS_MUTEX */
+			#endif /* HYPERECS_MUTEX */
 
 				if (!HasComponent<C>(entity))
 					shouldSkip = true;
 
-#ifdef HYPERECS_MUTEX
+			#ifdef HYPERECS_MUTEX
 				entityLock.lock();
-#endif /* HYPERECS_MUTEX */
+			#endif /* HYPERECS_MUTEX */
 			};
 			(lambda.template operator() < T > (), ...);
 			if (shouldSkip)
@@ -669,9 +669,9 @@ namespace HyperECS
 				__debugbreak();
 			}
 
-#ifdef HYPERECS_MUTEX
+		#ifdef HYPERECS_MUTEX
 			std::unique_lock<std::mutex> systemLock(m_SystemLock);
-#endif /* HYPERECS_MUTEX */
+		#endif /* HYPERECS_MUTEX */
 
 			m_Systems[typeid(T).hash_code()] = new T(std::forward<Args>(args)...);
 			return *static_cast<T*>(m_Systems.at(typeid(T).hash_code()));
@@ -691,9 +691,9 @@ namespace HyperECS
 				__debugbreak();
 			}
 
-#ifdef HYPERECS_MUTEX
+		#ifdef HYPERECS_MUTEX
 			std::unique_lock<std::mutex> systemLock(m_SystemLock);
-#endif /* HYPERECS_MUTEX */
+		#endif /* HYPERECS_MUTEX */
 
 			m_Systems.erase(typeid(T).hash_code());
 		}
@@ -712,9 +712,9 @@ namespace HyperECS
 				__debugbreak();
 			}
 
-#ifdef HYPERECS_MUTEX
+		#ifdef HYPERECS_MUTEX
 			std::unique_lock<std::mutex> systemLock(m_SystemLock);
-#endif /* HYPERECS_MUTEX */
+		#endif /* HYPERECS_MUTEX */
 
 			auto lambda = [&]<typename C>() mutable
 			{
@@ -739,9 +739,9 @@ namespace HyperECS
 				__debugbreak();
 			}
 
-#ifdef HYPERECS_MUTEX
+		#ifdef HYPERECS_MUTEX
 			std::unique_lock<std::mutex> systemLock(m_SystemLock);
-#endif /* HYPERECS_MUTEX */
+		#endif /* HYPERECS_MUTEX */
 
 			return *static_cast<T*>(m_Systems.at(typeid(T).hash_code()));
 		}
@@ -756,9 +756,9 @@ namespace HyperECS
 		template<class T, class = class std::enable_if<std::is_base_of<System, T>::value, T>::type>
 		constexpr bool HasSystem()
 		{
-#ifdef HYPERECS_MUTEX
+		#ifdef HYPERECS_MUTEX
 			std::unique_lock<std::mutex> systemLock(m_SystemLock);
-#endif /* HYPERECS_MUTEX */
+		#endif /* HYPERECS_MUTEX */
 
 			return m_Systems.find(typeid(T).hash_code()) != m_Systems.end();
 		}
@@ -773,9 +773,9 @@ namespace HyperECS
 		template<class... T, class = class std::enable_if<std::is_base_of<System, T...>::value, T...>::type>
 		constexpr bool HasMultipleSystem()
 		{
-#ifdef HYPERECS_MUTEX
+		#ifdef HYPERECS_MUTEX
 			std::unique_lock<std::mutex> systemLock(m_SystemLock);
-#endif /* HYPERECS_MUTEX */
+		#endif /* HYPERECS_MUTEX */
 
 			bool shouldSkip = false;
 			auto lambda = [&]<typename C>() mutable
@@ -783,16 +783,16 @@ namespace HyperECS
 				if (shouldSkip)
 					return;
 
-#ifdef HYPERECS_MUTEX
+			#ifdef HYPERECS_MUTEX
 				systemLock.unlock();
-#endif /* HYPERECS_MUTEX */
+			#endif /* HYPERECS_MUTEX */
 
 				if (!HasSystem<C>())
 					shouldSkip = true;
 
-#ifdef HYPERECS_MUTEX
+			#ifdef HYPERECS_MUTEX
 				systemLock.lock();
-#endif /* HYPERECS_MUTEX */
+			#endif /* HYPERECS_MUTEX */
 			};
 			(lambda.template operator() < T > (), ...);
 			return !shouldSkip;
