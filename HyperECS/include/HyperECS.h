@@ -12,7 +12,7 @@ namespace HyperECS
 	/* Wrapper for entity UUID */
 	struct Entity
 	{
-		/* Typeid hashcode from the entity */
+		/* Type id hash code from the entity */
 		size_t Handle;
 
 		/**
