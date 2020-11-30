@@ -370,7 +370,7 @@ namespace HyperECS
 			return m_Registry.GetEntities<T...>();
 		}
 
-		template<class T, typename... Args>
+		template<class T, class = class std::enable_if<std::is_base_of<System, T>::value, T>::type, typename... Args>
 		constexpr T& AddSystem(Args&&... args)
 		{
 			if (HasSystem<T>())
@@ -383,7 +383,7 @@ namespace HyperECS
 			return *static_cast<T*>(m_Systems.at(typeid(T).hash_code()));
 		}
 
-		template<class T>
+		template<class T, class = class std::enable_if<std::is_base_of<System, T>::value, T>::type>
 		constexpr void RemoveSystem()
 		{
 			if (!HasSystem<T>())
@@ -395,7 +395,7 @@ namespace HyperECS
 			m_Systems.erase(typeid(T).hash_code());
 		}
 
-		template<class... T>
+		template<class... T, class = class std::enable_if<std::is_base_of<System, T...>::value, T...>::type>
 		constexpr void RemoveMultipleSystem()
 		{
 			if (!HasMultipleSystem<T...>())
@@ -411,7 +411,7 @@ namespace HyperECS
 			(lambda.template operator() < T > (), ...);
 		}
 
-		template<class T>
+		template<class T, class = class std::enable_if<std::is_base_of<System, T>::value, T>::type>
 		constexpr T& GetSystem()
 		{
 			if (!HasSystem<T>())
@@ -423,13 +423,13 @@ namespace HyperECS
 			return *static_cast<T*>(m_Systems.at(typeid(T).hash_code()));
 		}
 
-		template<class T>
+		template<class T, class = class std::enable_if<std::is_base_of<System, T>::value, T>::type>
 		constexpr bool HasSystem()
 		{
 			return m_Systems.find(typeid(T).hash_code()) != m_Systems.end();
 		}
 
-		template<class... T>
+		template<class... T, class = class std::enable_if<std::is_base_of<System, T...>::value, T...>::type>
 		constexpr bool HasMultipleSystem()
 		{
 			bool shouldSkip = false;
