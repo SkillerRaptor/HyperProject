@@ -291,4 +291,183 @@ namespace HyperECS
 			return entities;
 		}
 	};
+
+	class System
+	{
+	public:
+		virtual void OnTick(Registry& registry, int currentTick) = 0;
+		virtual void OnUpdate(Registry& registry, float deltaTime) = 0;
+		virtual void OnRender(Registry& registry) = 0;
+	};
+
+	class World
+	{
+	private:
+		Registry m_Registry;
+		std::unordered_map<size_t, System*> m_Systems;
+
+	public:
+		Entity Construct()
+		{
+			return m_Registry.Construct();
+		}
+
+		template<class T, typename... Args>
+		constexpr T& AddComponent(Entity entity, Args&&... args)
+		{
+			return m_Registry.AddComponent<T>(entity, args...);
+		}
+
+		template<class T>
+		constexpr void RemoveComponent(Entity entity)
+		{
+			m_Registry.RemoveComponent<T>(entity);
+		}
+
+		template<class... T>
+		constexpr void RemoveMultipleComponent(Entity entity)
+		{
+			m_Registry.RemoveMultipleComponent<T...>(entity);
+		}
+
+		template<class T>
+		constexpr T& GetComponent(Entity entity)
+		{
+			return m_Registry.GetComponent<T>(entity);
+		}
+
+		template<class T>
+		constexpr bool HasComponent(Entity entity)
+		{
+			return m_Registry.HasComponent<T>(entity);
+		}
+
+		template<class... T>
+		constexpr bool HasMultipleComponent(Entity entity)
+		{
+			return m_Registry.HasMultipleComponent<T...>(entity);
+		}
+
+		void Each(const typename std::common_type<std::function<void(Entity)>>::type function)
+		{
+			m_Registry.Each(function);
+		}
+
+		template<class... T>
+		constexpr void Each(const typename std::common_type<std::function<void(Entity, T&...)>>::type function)
+		{
+			m_Registry.Each<T...>(function);
+		}
+
+		std::vector<Entity> GetEntities() const
+		{
+			return m_Registry.GetEntities();
+		}
+
+		template<class... T>
+		constexpr std::vector<Entity> GetEntities()
+		{
+			return m_Registry.GetEntities<T...>();
+		}
+
+		template<class T, typename... Args>
+		constexpr T& AddSystem(Args&&... args)
+		{
+			if (HasSystem<T>())
+			{
+				std::cerr << "[HyperECS] World already has the System!" << std::endl;
+				__debugbreak();
+			}
+
+			m_Systems[typeid(T).hash_code()] = new T(std::forward<Args>(args)...);
+			return *static_cast<T*>(m_Systems.at(typeid(T).hash_code()));
+		}
+
+		template<class T>
+		constexpr void RemoveSystem()
+		{
+			if (!HasSystem<T>())
+			{
+				std::cerr << "[HyperECS] World has not the System!" << std::endl;
+				__debugbreak();
+			}
+
+			m_Systems.erase(typeid(T).hash_code());
+		}
+
+		template<class... T>
+		constexpr void RemoveMultipleSystem()
+		{
+			if (!HasMultipleSystem<T...>())
+			{
+				std::cerr << "[HyperECS] World has not the System!" << std::endl;
+				__debugbreak();
+			}
+
+			auto lambda = [&]<typename C>() mutable
+			{
+				RemoveSystem<C>();
+			};
+			(lambda.template operator() < T > (), ...);
+		}
+
+		template<class T>
+		constexpr T& GetSystem()
+		{
+			if (!HasSystem<T>())
+			{
+				std::cerr << "[HyperECS] World has not the System!" << std::endl;
+				__debugbreak();
+			}
+
+			return *static_cast<T*>(m_Systems.at(typeid(T).hash_code()));
+		}
+
+		template<class T>
+		constexpr bool HasSystem()
+		{
+			return m_Systems.find(typeid(T).hash_code()) != m_Systems.end();
+		}
+
+		template<class... T>
+		constexpr bool HasMultipleSystem()
+		{
+			bool shouldSkip = false;
+			auto lambda = [&]<typename C>() mutable
+			{
+				if (shouldSkip)
+					return;
+				if (!HasSystem<C>())
+					shouldSkip = true;
+			};
+			(lambda.template operator() < T > (), ...);
+			return !shouldSkip;
+		}
+
+		std::vector<System*> GetSystems()
+		{
+			std::vector<System*> systems;
+			for (auto& system : m_Systems)
+				systems.push_back(system.second);
+			return systems;
+		}
+
+		void OnTick(int currentTick)
+		{
+			for (auto& system : m_Systems)
+				system.second->OnTick(m_Registry, currentTick);
+		}
+
+		void OnUpdate(float deltaTime)
+		{
+			for (auto& system : m_Systems)
+				system.second->OnUpdate(m_Registry, deltaTime);
+		}
+
+		void OnRender()
+		{
+			for (auto& system : m_Systems)
+				system.second->OnRender(m_Registry);
+		}
+	};
 }
