@@ -12,9 +12,21 @@ namespace HyperECS
 	/* Wrapper for entity UUID */
 	struct Entity
 	{
+		/* Typeid hashcode from the entity */
 		size_t Handle;
 
+		/**
+		 * @brief Checks if the entity is valid
+		 *
+		 * @return Returns if the entity was valid
+		 */
 		bool IsHandleValid() const { return Handle != 0; }
+
+		/**
+		 * @brief Compares entity to an another
+		 *
+		 * @return Returns if the entity is the same
+		 */
 		bool operator==(const Entity& other) const { return Handle == other.Handle; }
 	};
 
@@ -24,19 +36,40 @@ namespace HyperECS
 		/* Hasher to hash entity struct */
 		struct EntityHasher
 		{
+			/**
+			 * @brief Hashes the entity
+			 * 
+			 * @param entity The entity that is getting hashed
+			 *
+			 * @return Returns the hash of the entity
+			 */
 			size_t operator()(const Entity& entity) const { return (std::hash<size_t>()(entity.Handle)); }
 		};
 
-		/* Struct to hold component UUID & index */
+		/* Component struct to hold data from a specified component */
 		struct ComponentIndex
 		{
+			/* Typeid hashcode from the component */
 			size_t Handle;
+
+			/* Index from the component in the component map */
 			size_t Index;
 
 			ComponentIndex(size_t handle, size_t index)
 				: Handle(handle), Index(index) {}
 
+			/**
+			 * @brief Checks if the component is valid
+			 *
+			 * @return Returns if the component was valid
+			 */
 			bool IsComponentValid() const { return Handle != 0 && Index != 0; }
+
+			/**
+			 * @brief Compares component to an another
+			 *
+			 * @return Returns if the component is the same
+			 */
 			bool operator==(const ComponentIndex& other) const { return Handle == other.Handle && Index == other.Index; }
 		};
 
@@ -49,9 +82,13 @@ namespace HyperECS
 		/* Holds the entities and the corresponding components */
 		std::unordered_map<Entity, std::vector<ComponentIndex>, EntityHasher> m_Entities;
 
-		/* Locks for multi-threading */
+		/* Mutex & Lock for the free entries */
 		std::mutex m_FreeLock;
+
+		/* Mutex & Lock for the components */
 		std::mutex m_ComponentLock;
+
+		/* Mutex & Lock for the entities */
 		std::mutex m_EntityLock;
 
 	public:
