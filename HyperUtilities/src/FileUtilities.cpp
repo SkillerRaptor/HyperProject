@@ -5,414 +5,411 @@
 #include <fstream>
 #include <iostream>
 
-namespace Hyperion
+namespace HyperUtilities
 {
-	namespace FileUtilities
+	void FileUtilities::WriteFile(const std::string& file, const std::vector<std::string>& lines)
 	{
-		void WriteFile(const std::string& file, const std::vector<std::string>& lines)
+		if (IsDirectory(file))
 		{
-			if (IsDirectory(file))
-			{
-				std::cerr << "[HyperUtilities] Path was not a file!" << std::endl;
-				__debugbreak();
-			}
-
-			std::ofstream fileStream(file);
-
-			for (std::string line : lines)
-				fileStream << line;
-
-			fileStream.close();
+			std::cerr << "[HyperUtilities] Path was not a file!" << std::endl;
+			__debugbreak();
 		}
 
-		void ReadFile(const std::string& file, const typename std::common_type<std::function<void(const std::string&)>>::type function)
+		std::ofstream fileStream(file);
+
+		for (std::string line : lines)
+			fileStream << line;
+
+		fileStream.close();
+	}
+
+	void FileUtilities::ReadFile(const std::string& file, const typename std::common_type<std::function<void(const std::string&)>>::type function)
+	{
+		if (!Exists(file))
 		{
-			if (!Exists(file))
-			{
-				std::cerr << "[HyperUtilities] File was not found!" << std::endl;
-				__debugbreak();
-			}
-
-			if (IsDirectory(file))
-			{
-				std::cerr << "[HyperUtilities] Path was not a file!" << std::endl;
-				__debugbreak();
-			}
-
-			std::ifstream fileStream(file);
-
-			std::string line;
-			while (std::getline(fileStream, line))
-				function(line);
-
-			fileStream.close();
+			std::cerr << "[HyperUtilities] File was not found!" << std::endl;
+			__debugbreak();
 		}
 
-		void ReadFile(const std::string& file, const typename std::common_type<std::function<void(std::vector<std::string>)>>::type function)
+		if (IsDirectory(file))
 		{
-			if (!Exists(file))
-			{
-				std::cerr << "[HyperUtilities] File was not found!" << std::endl;
-				__debugbreak();
-			}
-
-			if (IsDirectory(file))
-			{
-				std::cerr << "[HyperUtilities] Path was not a file!" << std::endl;
-				__debugbreak();
-			}
-
-			std::ifstream fileStream(file);
-
-			std::vector<std::string> lines;
-
-			std::string line;
-			while (std::getline(fileStream, line))
-				lines.push_back(line);
-
-			fileStream.close();
-
-			function(lines);
+			std::cerr << "[HyperUtilities] Path was not a file!" << std::endl;
+			__debugbreak();
 		}
 
-		std::vector<std::string> ReadFile(const std::string& file)
+		std::ifstream fileStream(file);
+
+		std::string line;
+		while (std::getline(fileStream, line))
+			function(line);
+
+		fileStream.close();
+	}
+
+	void FileUtilities::ReadFile(const std::string& file, const typename std::common_type<std::function<void(std::vector<std::string>)>>::type function)
+	{
+		if (!Exists(file))
 		{
-			if (!Exists(file))
-			{
-				std::cerr << "[HyperUtilities] File was not found!" << std::endl;
-				__debugbreak();
-			}
-
-			if (IsDirectory(file))
-			{
-				std::cerr << "[HyperUtilities] Path was not a file!" << std::endl;
-				__debugbreak();
-			}
-
-			std::ifstream fileStream(file);
-
-			std::vector<std::string> lines;
-
-			std::string line;
-			while (std::getline(fileStream, line))
-				lines.push_back(line);
-
-			return lines;
+			std::cerr << "[HyperUtilities] File was not found!" << std::endl;
+			__debugbreak();
 		}
 
-		void GetFiles(const std::string& directory, const typename std::common_type<std::function<void(const std::string&)>>::type function)
+		if (IsDirectory(file))
 		{
-			if (!Exists(directory))
-			{
-				std::cerr << "[HyperUtilities] Directory was not found!" << std::endl;
-				__debugbreak();
-			}
-
-			if (IsFile(directory))
-			{
-				std::cerr << "[HyperUtilities] Path was not a directory!" << std::endl;
-				__debugbreak();
-			}
-
-			for (const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(directory))
-			{
-				std::string entryPath = entry.path().string();
-				if (IsFile(entryPath))
-				{
-					std::replace(entryPath.begin(), entryPath.end(), '\\', '/');
-					function(entryPath);
-				}
-			}
+			std::cerr << "[HyperUtilities] Path was not a file!" << std::endl;
+			__debugbreak();
 		}
 
-		void GetFiles(const std::string& directory, const typename std::common_type<std::function<void(std::vector<std::string>)>>::type function)
+		std::ifstream fileStream(file);
+
+		std::vector<std::string> lines;
+
+		std::string line;
+		while (std::getline(fileStream, line))
+			lines.push_back(line);
+
+		fileStream.close();
+
+		function(lines);
+	}
+
+	std::vector<std::string> FileUtilities::ReadFile(const std::string& file)
+	{
+		if (!Exists(file))
 		{
-			if (!Exists(directory))
-			{
-				std::cerr << "[HyperUtilities] Directory was not found!" << std::endl;
-				__debugbreak();
-			}
-
-			if (IsFile(directory))
-			{
-				std::cerr << "[HyperUtilities] Path was not a directory!" << std::endl;
-				__debugbreak();
-			}
-
-			std::vector<std::string> files;
-			for (const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(directory))
-			{
-				std::string entryPath = entry.path().string();
-				if (IsFile(entryPath))
-				{
-					std::replace(entryPath.begin(), entryPath.end(), '\\', '/');
-					files.push_back(entryPath);
-				}
-			}
-			function(files);
+			std::cerr << "[HyperUtilities] File was not found!" << std::endl;
+			__debugbreak();
 		}
 
-		void GetFiles(const std::string& directory, std::vector<std::string>& files)
+		if (IsDirectory(file))
 		{
-			if (!Exists(directory))
-			{
-				std::cerr << "[HyperUtilities] Directory was not found!" << std::endl;
-				__debugbreak();
-			}
-
-			if (IsFile(directory))
-			{
-				std::cerr << "[HyperUtilities] Path was not a directory!" << std::endl;
-				__debugbreak();
-			}
-
-			for (const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(directory))
-			{
-				std::string entryPath = entry.path().string();
-				if (IsFile(entryPath))
-				{
-					std::replace(entryPath.begin(), entryPath.end(), '\\', '/');
-					files.push_back(entryPath);
-				}
-			}
+			std::cerr << "[HyperUtilities] Path was not a file!" << std::endl;
+			__debugbreak();
 		}
 
-		std::vector<std::string> GetFiles(const std::string& directory)
+		std::ifstream fileStream(file);
+
+		std::vector<std::string> lines;
+
+		std::string line;
+		while (std::getline(fileStream, line))
+			lines.push_back(line);
+
+		return lines;
+	}
+
+	void FileUtilities::GetFiles(const std::string& directory, const typename std::common_type<std::function<void(const std::string&)>>::type function)
+	{
+		if (!Exists(directory))
 		{
-			if (!Exists(directory))
-			{
-				std::cerr << "[HyperUtilities] Directory was not found!" << std::endl;
-				__debugbreak();
-			}
-
-			if (IsFile(directory))
-			{
-				std::cerr << "[HyperUtilities] Path was not a directory!" << std::endl;
-				__debugbreak();
-			}
-
-			std::vector<std::string> files;
-			for (const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(directory))
-			{
-				std::string entryPath = entry.path().string();
-				if (IsFile(entryPath))
-				{
-					std::replace(entryPath.begin(), entryPath.end(), '\\', '/');
-					files.push_back(entryPath);
-				}
-			}
-			return files;
+			std::cerr << "[HyperUtilities] Directory was not found!" << std::endl;
+			__debugbreak();
 		}
 
-		void GetDirectories(const std::string& directory, const typename std::common_type<std::function<void(const std::string&)>>::type function)
+		if (IsFile(directory))
 		{
-			if (!Exists(directory))
-			{
-				std::cerr << "[HyperUtilities] Directory was not found!" << std::endl;
-				__debugbreak();
-			}
-
-			if (IsFile(directory))
-			{
-				std::cerr << "[HyperUtilities] Path was not a directory!" << std::endl;
-				__debugbreak();
-			}
-
-			for (const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(directory))
-			{
-				std::string entryPath = entry.path().string();
-				if (IsDirectory(entryPath))
-				{
-					std::replace(entryPath.begin(), entryPath.end(), '\\', '/');
-					function(entryPath);
-				}
-			}
+			std::cerr << "[HyperUtilities] Path was not a directory!" << std::endl;
+			__debugbreak();
 		}
 
-		void GetDirectories(const std::string& directory, const typename std::common_type<std::function<void(std::vector<std::string>)>>::type function)
+		for (const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(directory))
 		{
-			if (!Exists(directory))
+			std::string entryPath = entry.path().string();
+			if (IsFile(entryPath))
 			{
-				std::cerr << "[HyperUtilities] Directory was not found!" << std::endl;
-				__debugbreak();
-			}
-
-			if (IsFile(directory))
-			{
-				std::cerr << "[HyperUtilities] Path was not a directory!" << std::endl;
-				__debugbreak();
-			}
-
-			std::vector<std::string> directories;
-			for (const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(directory))
-			{
-				std::string entryPath = entry.path().string();
-				if (IsDirectory(entryPath))
-				{
-					std::replace(entryPath.begin(), entryPath.end(), '\\', '/');
-					directories.push_back(entryPath);
-				}
-			}
-			function(directories);
-		}
-
-		void GetDirectories(const std::string& directory, std::vector<std::string>& directories)
-		{
-			if (!Exists(directory))
-			{
-				std::cerr << "[HyperUtilities] Directory was not found!" << std::endl;
-				__debugbreak();
-			}
-
-			if (IsFile(directory))
-			{
-				std::cerr << "[HyperUtilities] Path was not a directory!" << std::endl;
-				__debugbreak();
-			}
-
-			for (const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(directory))
-			{
-				std::string entryPath = entry.path().string();
-				if (IsDirectory(entryPath))
-				{
-					std::replace(entryPath.begin(), entryPath.end(), '\\', '/');
-					directories.push_back(entryPath);
-				}
-			}
-		}
-
-		std::vector<std::string> GetDirectories(const std::string& directory)
-		{
-			if (!Exists(directory))
-			{
-				std::cerr << "[HyperUtilities] Directory was not found!" << std::endl;
-				__debugbreak();
-			}
-
-			if (IsFile(directory))
-			{
-				std::cerr << "[HyperUtilities] Path was not a directory!" << std::endl;
-				__debugbreak();
-			}
-
-			std::vector<std::string> directories;
-			for (const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(directory))
-			{
-				std::string entryPath = entry.path().string();
-				if (IsDirectory(entryPath))
-				{
-					std::replace(entryPath.begin(), entryPath.end(), '\\', '/');
-					directories.push_back(entryPath);
-				}
-			}
-			return directories;
-		}
-
-		void GetEntry(const std::string& directory, const typename std::common_type<std::function<void(const std::string&)>>::type function)
-		{
-			if (!Exists(directory))
-			{
-				std::cerr << "[HyperUtilities] Directory was not found!" << std::endl;
-				__debugbreak();
-			}
-
-			if (IsFile(directory))
-			{
-				std::cerr << "[HyperUtilities] Path was not a directory!" << std::endl;
-				__debugbreak();
-			}
-
-			for (const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(directory))
-			{
-				std::string entryPath = entry.path().string();
 				std::replace(entryPath.begin(), entryPath.end(), '\\', '/');
 				function(entryPath);
 			}
 		}
+	}
 
-		void GetEntry(const std::string& directory, const typename std::common_type<std::function<void(std::vector<std::string>)>>::type function)
+	void FileUtilities::GetFiles(const std::string& directory, const typename std::common_type<std::function<void(std::vector<std::string>)>>::type function)
+	{
+		if (!Exists(directory))
 		{
-			if (!Exists(directory))
-			{
-				std::cerr << "[HyperUtilities] Directory was not found!" << std::endl;
-				__debugbreak();
-			}
+			std::cerr << "[HyperUtilities] Directory was not found!" << std::endl;
+			__debugbreak();
+		}
 
-			if (IsFile(directory))
-			{
-				std::cerr << "[HyperUtilities] Path was not a directory!" << std::endl;
-				__debugbreak();
-			}
+		if (IsFile(directory))
+		{
+			std::cerr << "[HyperUtilities] Path was not a directory!" << std::endl;
+			__debugbreak();
+		}
 
-			std::vector<std::string> entries;
-			for (const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(directory))
+		std::vector<std::string> files;
+		for (const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(directory))
+		{
+			std::string entryPath = entry.path().string();
+			if (IsFile(entryPath))
 			{
-				std::string entryPath = entry.path().string();
 				std::replace(entryPath.begin(), entryPath.end(), '\\', '/');
-				entries.push_back(entryPath);
+				files.push_back(entryPath);
 			}
-			function(entries);
+		}
+		function(files);
+	}
+
+	void FileUtilities::GetFiles(const std::string& directory, std::vector<std::string>& files)
+	{
+		if (!Exists(directory))
+		{
+			std::cerr << "[HyperUtilities] Directory was not found!" << std::endl;
+			__debugbreak();
 		}
 
-		void GetEntry(const std::string& directory, std::vector<std::string>& entries)
+		if (IsFile(directory))
 		{
-			if (!Exists(directory))
-			{
-				std::cerr << "[HyperUtilities] Directory was not found!" << std::endl;
-				__debugbreak();
-			}
+			std::cerr << "[HyperUtilities] Path was not a directory!" << std::endl;
+			__debugbreak();
+		}
 
-			if (IsFile(directory))
+		for (const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(directory))
+		{
+			std::string entryPath = entry.path().string();
+			if (IsFile(entryPath))
 			{
-				std::cerr << "[HyperUtilities] Path was not a directory!" << std::endl;
-				__debugbreak();
-			}
-
-			for (const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(directory))
-			{
-				std::string entryPath = entry.path().string();
 				std::replace(entryPath.begin(), entryPath.end(), '\\', '/');
-				entries.push_back(entryPath);
+				files.push_back(entryPath);
 			}
 		}
+	}
 
-		std::vector<std::string> GetEntry(const std::string& directory)
+	std::vector<std::string> FileUtilities::GetFiles(const std::string& directory)
+	{
+		if (!Exists(directory))
 		{
-			if (!Exists(directory))
-			{
-				std::cerr << "[HyperUtilities] Directory was not found!" << std::endl;
-				__debugbreak();
-			}
+			std::cerr << "[HyperUtilities] Directory was not found!" << std::endl;
+			__debugbreak();
+		}
 
-			if (IsFile(directory))
-			{
-				std::cerr << "[HyperUtilities] Path was not a directory!" << std::endl;
-				__debugbreak();
-			}
+		if (IsFile(directory))
+		{
+			std::cerr << "[HyperUtilities] Path was not a directory!" << std::endl;
+			__debugbreak();
+		}
 
-			std::vector<std::string> entries;
-			for (const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(directory))
+		std::vector<std::string> files;
+		for (const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(directory))
+		{
+			std::string entryPath = entry.path().string();
+			if (IsFile(entryPath))
 			{
-				std::string entryPath = entry.path().string();
 				std::replace(entryPath.begin(), entryPath.end(), '\\', '/');
-				entries.push_back(entryPath);
+				files.push_back(entryPath);
 			}
-			return entries;
+		}
+		return files;
+	}
+
+	void FileUtilities::GetDirectories(const std::string& directory, const typename std::common_type<std::function<void(const std::string&)>>::type function)
+	{
+		if (!Exists(directory))
+		{
+			std::cerr << "[HyperUtilities] Directory was not found!" << std::endl;
+			__debugbreak();
 		}
 
-		bool Exists(const std::string& path)
+		if (IsFile(directory))
 		{
-			return std::filesystem::exists(path);
+			std::cerr << "[HyperUtilities] Path was not a directory!" << std::endl;
+			__debugbreak();
 		}
 
-		bool IsFile(const std::string& path)
+		for (const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(directory))
 		{
-			return !std::filesystem::is_directory(path);
+			std::string entryPath = entry.path().string();
+			if (IsDirectory(entryPath))
+			{
+				std::replace(entryPath.begin(), entryPath.end(), '\\', '/');
+				function(entryPath);
+			}
+		}
+	}
+
+	void FileUtilities::GetDirectories(const std::string& directory, const typename std::common_type<std::function<void(std::vector<std::string>)>>::type function)
+	{
+		if (!Exists(directory))
+		{
+			std::cerr << "[HyperUtilities] Directory was not found!" << std::endl;
+			__debugbreak();
 		}
 
-		bool IsDirectory(const std::string& path)
+		if (IsFile(directory))
 		{
-			return std::filesystem::is_directory(path);
+			std::cerr << "[HyperUtilities] Path was not a directory!" << std::endl;
+			__debugbreak();
 		}
+
+		std::vector<std::string> directories;
+		for (const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(directory))
+		{
+			std::string entryPath = entry.path().string();
+			if (IsDirectory(entryPath))
+			{
+				std::replace(entryPath.begin(), entryPath.end(), '\\', '/');
+				directories.push_back(entryPath);
+			}
+		}
+		function(directories);
+	}
+
+	void FileUtilities::GetDirectories(const std::string& directory, std::vector<std::string>& directories)
+	{
+		if (!Exists(directory))
+		{
+			std::cerr << "[HyperUtilities] Directory was not found!" << std::endl;
+			__debugbreak();
+		}
+
+		if (IsFile(directory))
+		{
+			std::cerr << "[HyperUtilities] Path was not a directory!" << std::endl;
+			__debugbreak();
+		}
+
+		for (const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(directory))
+		{
+			std::string entryPath = entry.path().string();
+			if (IsDirectory(entryPath))
+			{
+				std::replace(entryPath.begin(), entryPath.end(), '\\', '/');
+				directories.push_back(entryPath);
+			}
+		}
+	}
+
+	std::vector<std::string> FileUtilities::GetDirectories(const std::string& directory)
+	{
+		if (!Exists(directory))
+		{
+			std::cerr << "[HyperUtilities] Directory was not found!" << std::endl;
+			__debugbreak();
+		}
+
+		if (IsFile(directory))
+		{
+			std::cerr << "[HyperUtilities] Path was not a directory!" << std::endl;
+			__debugbreak();
+		}
+
+		std::vector<std::string> directories;
+		for (const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(directory))
+		{
+			std::string entryPath = entry.path().string();
+			if (IsDirectory(entryPath))
+			{
+				std::replace(entryPath.begin(), entryPath.end(), '\\', '/');
+				directories.push_back(entryPath);
+			}
+		}
+		return directories;
+	}
+
+	void FileUtilities::GetEntry(const std::string& directory, const typename std::common_type<std::function<void(const std::string&)>>::type function)
+	{
+		if (!Exists(directory))
+		{
+			std::cerr << "[HyperUtilities] Directory was not found!" << std::endl;
+			__debugbreak();
+		}
+
+		if (IsFile(directory))
+		{
+			std::cerr << "[HyperUtilities] Path was not a directory!" << std::endl;
+			__debugbreak();
+		}
+
+		for (const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(directory))
+		{
+			std::string entryPath = entry.path().string();
+			std::replace(entryPath.begin(), entryPath.end(), '\\', '/');
+			function(entryPath);
+		}
+	}
+
+	void FileUtilities::GetEntry(const std::string& directory, const typename std::common_type<std::function<void(std::vector<std::string>)>>::type function)
+	{
+		if (!Exists(directory))
+		{
+			std::cerr << "[HyperUtilities] Directory was not found!" << std::endl;
+			__debugbreak();
+		}
+
+		if (IsFile(directory))
+		{
+			std::cerr << "[HyperUtilities] Path was not a directory!" << std::endl;
+			__debugbreak();
+		}
+
+		std::vector<std::string> entries;
+		for (const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(directory))
+		{
+			std::string entryPath = entry.path().string();
+			std::replace(entryPath.begin(), entryPath.end(), '\\', '/');
+			entries.push_back(entryPath);
+		}
+		function(entries);
+	}
+
+	void FileUtilities::GetEntry(const std::string& directory, std::vector<std::string>& entries)
+	{
+		if (!Exists(directory))
+		{
+			std::cerr << "[HyperUtilities] Directory was not found!" << std::endl;
+			__debugbreak();
+		}
+
+		if (IsFile(directory))
+		{
+			std::cerr << "[HyperUtilities] Path was not a directory!" << std::endl;
+			__debugbreak();
+		}
+
+		for (const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(directory))
+		{
+			std::string entryPath = entry.path().string();
+			std::replace(entryPath.begin(), entryPath.end(), '\\', '/');
+			entries.push_back(entryPath);
+		}
+	}
+
+	std::vector<std::string> FileUtilities::GetEntry(const std::string& directory)
+	{
+		if (!Exists(directory))
+		{
+			std::cerr << "[HyperUtilities] Directory was not found!" << std::endl;
+			__debugbreak();
+		}
+
+		if (IsFile(directory))
+		{
+			std::cerr << "[HyperUtilities] Path was not a directory!" << std::endl;
+			__debugbreak();
+		}
+
+		std::vector<std::string> entries;
+		for (const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(directory))
+		{
+			std::string entryPath = entry.path().string();
+			std::replace(entryPath.begin(), entryPath.end(), '\\', '/');
+			entries.push_back(entryPath);
+		}
+		return entries;
+	}
+
+	bool FileUtilities::Exists(const std::string& path)
+	{
+		return std::filesystem::exists(path);
+	}
+
+	bool FileUtilities::IsFile(const std::string& path)
+	{
+		return !std::filesystem::is_directory(path);
+	}
+
+	bool FileUtilities::IsDirectory(const std::string& path)
+	{
+		return std::filesystem::is_directory(path);
 	}
 }

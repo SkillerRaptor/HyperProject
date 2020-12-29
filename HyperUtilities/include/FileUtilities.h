@@ -6,31 +6,32 @@
 
 namespace HyperUtilities
 {
-	namespace FileUtilities
+	class FileUtilities
 	{
-		void WriteFile(const std::string& file, const std::vector<std::string>& lines);
+	public:
+		static void WriteFile(const std::string& file, const std::vector<std::string>& lines);
 
-		void ReadFile(const std::string& file, const typename std::common_type<std::function<void(const std::string&)>>::type function);
-		void ReadFile(const std::string& file, const typename std::common_type<std::function<void(std::vector<std::string>)>>::type function);
-		std::vector<std::string> ReadFile(const std::string& file);
+		static void ReadFile(const std::string& file, const typename std::common_type<std::function<void(const std::string&)>>::type function);
+		static void ReadFile(const std::string& file, const typename std::common_type<std::function<void(std::vector<std::string>)>>::type function);
+		static std::vector<std::string> ReadFile(const std::string& file);
 
-		void GetFiles(const std::string& directory, const typename std::common_type<std::function<void(const std::string&)>>::type function);
-		void GetFiles(const std::string& directory, const typename std::common_type<std::function<void(std::vector<std::string>)>>::type function);
-		void GetFiles(const std::string& directory, std::vector<std::string>& files);
-		std::vector<std::string> GetFiles(const std::string& directory);
+		static void GetFiles(const std::string& directory, const typename std::common_type<std::function<void(const std::string&)>>::type function);
+		static void GetFiles(const std::string& directory, const typename std::common_type<std::function<void(std::vector<std::string>)>>::type function);
+		static void GetFiles(const std::string& directory, std::vector<std::string>& files);
+		static std::vector<std::string> GetFiles(const std::string& directory);
 
-		void GetDirectories(const std::string& directory, const typename std::common_type<std::function<void(const std::string&)>>::type function);
-		void GetDirectories(const std::string& directory, const typename std::common_type<std::function<void(std::vector<std::string>)>>::type function);
-		void GetDirectories(const std::string& directory, std::vector<std::string>& directories);
-		std::vector<std::string> GetDirectories(const std::string& directory);
+		static void GetDirectories(const std::string& directory, const typename std::common_type<std::function<void(const std::string&)>>::type function);
+		static void GetDirectories(const std::string& directory, const typename std::common_type<std::function<void(std::vector<std::string>)>>::type function);
+		static void GetDirectories(const std::string& directory, std::vector<std::string>& directories);
+		static std::vector<std::string> GetDirectories(const std::string& directory);
 
-		void GetEntry(const std::string& directory, const typename std::common_type<std::function<void(const std::string&)>>::type function);
-		void GetEntry(const std::string& directory, const typename std::common_type<std::function<void(std::vector<std::string>)>>::type function);
-		void GetEntry(const std::string& directory, std::vector<std::string>& entries);
-		std::vector<std::string> GetEntry(const std::string& directory);
+		static void GetEntry(const std::string& directory, const typename std::common_type<std::function<void(const std::string&)>>::type function);
+		static void GetEntry(const std::string& directory, const typename std::common_type<std::function<void(std::vector<std::string>)>>::type function);
+		static void GetEntry(const std::string& directory, std::vector<std::string>& entries);
+		static std::vector<std::string> GetEntry(const std::string& directory);
 
-		bool Exists(const std::string& path);
-		bool IsFile(const std::string& path);
-		bool IsDirectory(const std::string& path);
+		static bool Exists(const std::string& path);
+		static bool IsFile(const std::string& path);
+		static bool IsDirectory(const std::string& path);
 	}
 }
