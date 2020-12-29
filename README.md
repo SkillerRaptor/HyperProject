@@ -1,8 +1,7 @@
 ﻿# HyperProject
 
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/2b13b0f9b21b4c6286fdd4e56760704d)](https://app.codacy.com/gh/SkillerRaptor/HyperProject?utm_source=github.com&utm_medium=referral&utm_content=SkillerRaptor/HyperProject&utm_campaign=Badge_Grade)
-
 ![](https://img.shields.io/badge/license-MIT-yellow)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/2b13b0f9b21b4c6286fdd4e56760704d)](https://app.codacy.com/gh/SkillerRaptor/HyperProject?utm_source=github.com&utm_medium=referral&utm_content=SkillerRaptor/HyperProject&utm_campaign=Badge_Grade)
 
 HyperProject is a collection of little projects that does not have any external libraries.
 
